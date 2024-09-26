@@ -8,9 +8,6 @@ TABLE_NAME = "test"
 FUNCTION_NAME = "uuid_v4"
 MAX_URL_LENGTH = 512
 
-resp_succ = {'response': "success"}
-resp_err = {'response': "error"}
-
 app = Flask(__name__, template_folder = 'httpdocs')
 auth = HTTPBasicAuth()
 
@@ -64,7 +61,6 @@ def db_connect():
 
 def db_exec(*args):
   if db_connect():
-    print(*args)
     try:
       db.execute(*args)
       return list(db.fetchall()), True
@@ -78,6 +74,12 @@ def db_exec(*args):
 def check_missing_table_or_function():
   return len(db_exec(f"SHOW TABLES LIKE '{TABLE_NAME}'")[0]) == 0 or len(db_exec(f"SHOW FUNCTION STATUS LIKE '{FUNCTION_NAME}'")[0]) == 0
 
+def resp_suc(msg):
+  return {'result': "success", 'message': msg}
+
+def resp_err(msg):
+  return {'result': "error", 'message': msg}
+
 @auth.verify_password
 def verify_password(username, password):
   if username in http_users and check_password_hash(http_users.get(username), password):
@@ -87,23 +89,23 @@ def verify_password(username, password):
 @auth.login_required
 def edit():
   req = request.json
-  if req['action'] == "init" and not check_missing_table_or_function():
+  if req['action'] == "init":
+    if not check_missing_table_or_function(): return resp_err("Database is already initialized.")
     db_exec(f"CREATE TABLE IF NOT EXISTS {TABLE_NAME} (id VARCHAR(32) NOT NULL, url VARCHAR({MAX_URL_LENGTH}) NOT NULL, new_win BOOLEAN NOT NULL, PRIMARY KEY (id)) ENGINE = InnoDB")
-    db_exec(f"CREATE FUNCTION IF NOT EXISTS {FUNCTION_NAME} RETURNS CHAR(32) BEGIN RETURN LOWER(CONCAT(HEX(RANDOM_BYTES(4)), HEX(RANDOM_BYTES(2)), '4', SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), HEX(FLOOR(ASCII(RANDOM_BYTES(1)) / 64) + 8), SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), hex(RANDOM_BYTES(6)))); END;")
-    if check_missing_table_or_function(): return resp_err
-    else: return resp_succ
-  ks = keys(req)
+    db_exec(f"CREATE FUNCTION IF NOT EXISTS {FUNCTION_NAME}() RETURNS CHAR(32) BEGIN RETURN LOWER(CONCAT(HEX(RANDOM_BYTES(4)), HEX(RANDOM_BYTES(2)), '4', SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), HEX(FLOOR(ASCII(RANDOM_BYTES(1)) / 64) + 8), SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), hex(RANDOM_BYTES(6)))); END;")
+    return resp_suc("Database is now initialized and ready.") if not check_missing_table_or_function() else resp_err("Database could not be initialized.")
+  ks = req.keys()
   if 'action' not in ks:
-    return resp_err
-  if req['action'] == "data":
-    res, succ = db_exec("SELECT * FROM ?", (TABLE_NAME,))
-    if succ: return {'response': "success", 'data': res}
-    else: return resp_err
+    return resp_err("No action was requested.")
+  #if req['action'] == "data":
+  #  res, succ = db_exec("SELECT * FROM ?", (TABLE_NAME,))
+  #  if succ: return {'response': "success", 'data': res}
+  #  else: return resp_err
   if req['action'] == "new":
     if 'url' not in ks or 'new_win' not in ks: return resp_err
     if len(req['url']) > MAX_URL_LENGTH or str(req['new_win']).lower() not in ["true", "false", "1", "0"]: return resp_err
     succ = False
-    res, succ = db_exec("INSERT INTO test VALUES('uuid_v4(), ?, ?)", (req['url'], req['new_win']))
+    res, succ = db_exec(f"INSERT INTO test VALUES('{FUNCTION_NAME}(), ?, ?)", (req['url'], req['new_win']))
     return resp_succ if succ else resp_err
   if req['action'] == "edit":
     if 'id' not in ks or 'url' not in ks or 'new_win' not in ks: return resp_err
@@ -129,7 +131,7 @@ def link(id):
 @auth.login_required
 def index():
   if not db_connect(): return send_from_directory('httpdocs', 'db_error.html')
-  elif check_missing_table_or_function(): return send_from_directory('httpdocs', 'db_init.html')
+  elif check_missing_table_or_function(): return render_template('db_init.html', database_name=db_name, table_name=TABLE_NAME, function_name=FUNCTION_NAME)
   else:
     res, succ = db_exec(f"SELECT COUNT(id) as count FROM {TABLE_NAME}")
     num_redirects = res[0][0] if succ else "error"
