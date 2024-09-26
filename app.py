@@ -22,13 +22,29 @@ db_port = os.environ.get("DB_PORT") or "3306"
 db_user = os.environ.get("DB_USER") or "test"
 db_pass = os.environ.get("DB_PASS") or "test"
 db_name = os.environ.get("DB_NAME") or "test"
-connected = False
+dbconnector = None
+db = None
+db_init = False
+
+def db_connected():
+  if not db_init:
+    return False
+  try:
+      dbconnector.ping()
+  except:
+      return False
+  return True
+
+def db_disconnect():
+  dbconnector.close()
+  db_init = False
 
 def db_connect():
   global dbconnector
   global db
-  global connected
-  if not connected:
+  global db_init
+  if not db_connected():
+    if db_init: db_disconnect()
     try:
       dbconnector = mariadb.connect(
         user=db_user,
@@ -40,17 +56,15 @@ def db_connect():
       )
     except mariadb.Error as e:
       print(f"Error connecting to MariaDB Platform: {e}")
+      return False
     else:
       db = dbconnector.cursor()
-      connected = True
-
-def db_disconnect():
-  dbconnector.close()
+      db_init = True
+  return True
 
 def db_exec(*args):
-  global connected
-  db_connect()
-  if connected:
+  if db_connect():
+    print(*args)
     try:
       db.execute(*args)
       return list(db.fetchall()), True
@@ -58,14 +72,11 @@ def db_exec(*args):
       for e_msg in e.args:
         if e_msg == "Cursor doesn't have a result set":
           return list(), True
-        if e_msg == "Server has gone away":
-          connected = False
-          break
       print(f"Error while executing MariaDB SQL Query: {e}")
   return list(), False
 
 def check_missing_table_or_function():
-  return len(db_exec(f"SHOW TABLES LIKE {TABLE_NAME}")) == 0 or len(db_exec(f"SHOW FUNCTIONS LIKE {FUNCTION_NAME}")) == 0
+  return len(db_exec(f"SHOW TABLES LIKE '{TABLE_NAME}'")[0]) == 0 or len(db_exec(f"SHOW FUNCTION STATUS LIKE '{FUNCTION_NAME}'")[0]) == 0
 
 @auth.verify_password
 def verify_password(username, password):
@@ -105,7 +116,7 @@ def edit():
     return resp_succ if succ else resp_err
   return resp_err
 
-@app.route('/l/<path:id>', methods=['GET'])
+@app.route('/r/<path:id>', methods=['GET'])
 def link(id):
   res, succ = db_exec(f"SELECT id, url, new_win FROM {TABLE_NAME} WHERE id = ?", (id,))
   if len(res) == 0: abort(404)
@@ -117,10 +128,13 @@ def link(id):
 @app.route('/')
 @auth.login_required
 def index():
-  db_connect()
-  if not connected: return send_from_directory('httpdocs', 'db_error.html')
+  if not db_connect(): return send_from_directory('httpdocs', 'db_error.html')
   elif check_missing_table_or_function(): return send_from_directory('httpdocs', 'db_init.html')
-  else: return send_from_directory('httpdocs', 'config.html')
+  else:
+    res, succ = db_exec(f"SELECT COUNT(id) as count FROM {TABLE_NAME}")
+    num_redirects = res[0][0] if succ else "error"
+    hostname = request.host
+    return render_template('home.html', num_redirects=num_redirects, hostname=hostname)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port="81")
