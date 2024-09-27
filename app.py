@@ -41,7 +41,6 @@ def db_connect():
   global db
   global db_init
   if not db_connected():
-    if db_init: db_disconnect()
     try:
       dbconnector = mariadb.connect(
         user=db_user,
@@ -82,7 +81,7 @@ def resp_err(msg):
 
 def db_check(func):
   def inner(*args, **kwargs):
-    if not db_connect(): return send_from_directory('httpdocs', 'db_error.html')
+    if not db_connect(): return render_template('db_error.html', database_name=db_name, database_user=db_user)
     elif check_missing_table_or_function(): return render_template('db_init.html', database_name=db_name, table_name=TABLE_NAME, function_name=FUNCTION_NAME)
     else: return func(*args, **kwargs)
   return inner
@@ -94,7 +93,8 @@ def verify_password(username, password):
 
 @app.route('/config', methods=['POST'])
 @auth.login_required
-def edit():
+def config():
+  if not db_connect(): return resp_err("Database connection could not be established.")
   req = request.json
   if req['action'] == "init":
     if not check_missing_table_or_function(): return resp_err("Database is already initialized.")
@@ -111,37 +111,56 @@ def edit():
   if req['action'] == "new":
     if 'url' not in ks or 'new_win' not in ks: return resp_err
     if len(req['url']) > MAX_URL_LENGTH or str(req['new_win']).lower() not in ["true", "false", "1", "0"]: return resp_err
-    succ = False
-    res, succ = db_exec(f"INSERT INTO test VALUES('{FUNCTION_NAME}(), ?, ?)", (req['url'], req['new_win']))
-    return resp_succ if succ else resp_err
+    suc = False
+    res, suc = db_exec(f"INSERT INTO test VALUES('{FUNCTION_NAME}(), ?, ?)", (req['url'], req['new_win']))
+    return resp_suc if suc else resp_err
   if req['action'] == "edit":
     if 'id' not in ks or 'url' not in ks or 'new_win' not in ks: return resp_err
     if len(req['url']) > MAX_URL_LENGTH or str(req['new_win']).lower() not in ["true", "false", "1", "0"]: return resp_err
-    res, succ = db_exec(f"UPDATE {TABLE_NAME} SET url = ?, new_win = ? WHERE id = ?", (req['url'], req['new_win'], req['id']))
-    return resp_succ if succ else resp_err
+    res, suc = db_exec(f"UPDATE {TABLE_NAME} SET url = ?, new_win = ? WHERE id = ?", (req['url'], req['new_win'], req['id']))
+    return resp_suc if suc else resp_err
   if req['action'] == "delete":
     if 'id' not in ks: return resp_err
-    res, succ = db_exec(f"DELETE FROM {TABLE_NAME} WHERE id = ?", (req['id'],))
-    return resp_succ if succ else resp_err
+    res, suc = db_exec(f"DELETE FROM {TABLE_NAME} WHERE id = ?", (req['id'],))
+    return resp_suc if suc else resp_err
   return resp_err
 
 @app.route('/r/<path:id>', methods=['GET'])
 def link(id):
-  res, succ = db_exec(f"SELECT id, url, new_win FROM {TABLE_NAME} WHERE id = ?", (id,))
+  res, suc = db_exec(f"SELECT id, url, new_win FROM {TABLE_NAME} WHERE id = ?", (id,))
+  if not suc: abort(503)
   if len(res) == 0: abort(404)
   url = res[0][1]
   new_win = res[0][2]
   if new_win: return render_template('link_new_win.html', link=url)
   else: return render_template('link_same_win.html', link=url)
 
-@app.route('/')
+@app.route('/', endpoint='index')
 @auth.login_required
 @db_check
 def index():
-  res, succ = db_exec(f"SELECT COUNT(id) as count FROM {TABLE_NAME}")
-  num_redirects = res[0][0] if succ else "error"
+  res, suc = db_exec(f"SELECT COUNT(id) as count FROM {TABLE_NAME}")
+  num_redirects = res[0][0] if suc else "error"
   hostname = request.host
   return render_template('home.html', num_redirects=num_redirects, hostname=hostname)
+
+@app.route('/add', endpoint='add')
+@auth.login_required
+@db_check
+def add():
+  pass
+
+@app.route('/edit', endpoint='edit')
+@auth.login_required
+@db_check
+def edit():
+  pass
+
+@app.route('/delete', endpoint='delete')
+@auth.login_required
+@db_check
+def delete():
+  pass
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port="81")
