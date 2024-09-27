@@ -80,6 +80,13 @@ def resp_suc(msg):
 def resp_err(msg):
   return {'result': "error", 'message': msg}
 
+def db_check(func):
+  def inner(*args, **kwargs):
+    if not db_connect(): return send_from_directory('httpdocs', 'db_error.html')
+    elif check_missing_table_or_function(): return render_template('db_init.html', database_name=db_name, table_name=TABLE_NAME, function_name=FUNCTION_NAME)
+    else: return func(*args, **kwargs)
+  return inner
+
 @auth.verify_password
 def verify_password(username, password):
   if username in http_users and check_password_hash(http_users.get(username), password):
@@ -129,14 +136,12 @@ def link(id):
 
 @app.route('/')
 @auth.login_required
+@db_check
 def index():
-  if not db_connect(): return send_from_directory('httpdocs', 'db_error.html')
-  elif check_missing_table_or_function(): return render_template('db_init.html', database_name=db_name, table_name=TABLE_NAME, function_name=FUNCTION_NAME)
-  else:
-    res, succ = db_exec(f"SELECT COUNT(id) as count FROM {TABLE_NAME}")
-    num_redirects = res[0][0] if succ else "error"
-    hostname = request.host
-    return render_template('home.html', num_redirects=num_redirects, hostname=hostname)
+  res, succ = db_exec(f"SELECT COUNT(id) as count FROM {TABLE_NAME}")
+  num_redirects = res[0][0] if succ else "error"
+  hostname = request.host
+  return render_template('home.html', num_redirects=num_redirects, hostname=hostname)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port="81")
