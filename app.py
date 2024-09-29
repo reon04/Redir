@@ -139,7 +139,8 @@ def link(id):
 @db_check
 def index():
   redirects, suc = get_redirects()
-  return render_template('home.html', redirects=redirects, suc=suc)
+  if not suc: raise mariadb.error("Generic error")
+  return render_template('home.html', redirects=redirects)
 
 @app.route('/add', endpoint='add')
 @auth.login_required
