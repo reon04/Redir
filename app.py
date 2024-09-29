@@ -73,6 +73,9 @@ def db_exec(*args):
 def check_missing_table_or_function():
   return len(db_exec(f"SHOW TABLES LIKE '{TABLE_NAME}'")[0]) == 0 or len(db_exec(f"SHOW FUNCTION STATUS LIKE '{FUNCTION_NAME}'")[0]) == 0
 
+def get_redirects():
+  return db_exec(f"SELECT * FROM {TABLE_NAME}")
+
 def resp_suc(msg):
   return {'result': "success", 'message': msg}
 
@@ -104,10 +107,6 @@ def config():
   ks = req.keys()
   if 'action' not in ks:
     return resp_err("No action was requested.")
-  #if req['action'] == "data":
-  #  res, succ = db_exec("SELECT * FROM ?", (TABLE_NAME,))
-  #  if succ: return {'response': "success", 'data': res}
-  #  else: return resp_err
   if req['action'] == "new":
     if 'url' not in ks or 'new_win' not in ks: return resp_err
     if len(req['url']) > MAX_URL_LENGTH or str(req['new_win']).lower() not in ["true", "false", "1", "0"]: return resp_err
@@ -139,10 +138,8 @@ def link(id):
 @auth.login_required
 @db_check
 def index():
-  res, suc = db_exec(f"SELECT COUNT(id) as count FROM {TABLE_NAME}")
-  num_redirects = res[0][0] if suc else "error"
-  hostname = request.host
-  return render_template('home.html', num_redirects=num_redirects, hostname=hostname)
+  redirects, suc = get_redirects()
+  return render_template('home.html', redirects=redirects, suc=suc)
 
 @app.route('/add', endpoint='add')
 @auth.login_required
