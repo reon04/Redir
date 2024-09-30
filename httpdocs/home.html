@@ -7,7 +7,7 @@
 <a class="nav-link" href="/delete">Delete</a>
 {% endblock nav_items %}
 
-{% block content %} 
+{% block content %}
 <div class="mb-3 p-3 text-black rounded shadow">
   <h4 class="mb-2 pb-2 border-bottom">Overview</h4>
   <p class="mb-1">Total amount of registered redirects: {{ redirects|length }}</p>
@@ -15,7 +15,11 @@
   <p class="mb-2">List of all redirects:</p>
   <ul class="list-group" style="max-height: 50lvh; overflow:scroll; -webkit-overflow-scrolling: touch; word-wrap: break-word;">
     {% for id, url, new_win in redirects %}
-    <li class="list-group-item"><strong>{{ id }}</strong><br>{{ url }}</li>
+    <li class="list-group-item">
+      <button class="btn btn-clipboard btn-icon btn-sm btn-light" style="float:right" type="button" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Copy to Clipboard" data-clipboard-text="{{ request.host }}/r/{{ id }}"><i class="bi bi-clipboard"></i></button>
+      <p class="m-0" style="font-size: 14px;"><b>{{ id }}</b></p>
+      <p class="m-0">{{ url }}</p>
+    </li>
     {% endfor %}
   </ul>
   {% else %}
