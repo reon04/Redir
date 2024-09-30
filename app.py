@@ -62,16 +62,17 @@ def db_exec(*args):
   if db_connect():
     try:
       db.execute(*args)
-      return list(db.fetchall()), True
+      return list(db.fetchall())
     except mariadb.Error as e:
       for e_msg in e.args:
         if e_msg == "Cursor doesn't have a result set":
-          return list(), True
+          return list()
       print(f"Error while executing MariaDB SQL Query: {e}")
-  return list(), False
+      raise e from None
+  raise mariadb.Error(f"Can't connect to server on '{db_host}'")
 
 def check_missing_table_or_function():
-  return len(db_exec(f"SHOW TABLES LIKE '{TABLE_NAME}'")[0]) == 0 or len(db_exec(f"SHOW FUNCTION STATUS LIKE '{FUNCTION_NAME}'")[0]) == 0
+  return len(db_exec(f"SHOW TABLES LIKE '{TABLE_NAME}'")) == 0 or len(db_exec(f"SHOW FUNCTION STATUS LIKE '{FUNCTION_NAME}'")) == 0
 
 def get_redirects():
   return db_exec(f"SELECT * FROM {TABLE_NAME}")
@@ -111,23 +112,25 @@ def config():
     if 'url' not in ks or 'new_win' not in ks: return resp_err
     if len(req['url']) > MAX_URL_LENGTH or str(req['new_win']).lower() not in ["true", "false", "1", "0"]: return resp_err
     suc = False
+    # TODO remove suc
     res, suc = db_exec(f"INSERT INTO test VALUES('{FUNCTION_NAME}(), ?, ?)", (req['url'], req['new_win']))
     return resp_suc if suc else resp_err
   if req['action'] == "edit":
     if 'id' not in ks or 'url' not in ks or 'new_win' not in ks: return resp_err
     if len(req['url']) > MAX_URL_LENGTH or str(req['new_win']).lower() not in ["true", "false", "1", "0"]: return resp_err
+    # TODO remove suc
     res, suc = db_exec(f"UPDATE {TABLE_NAME} SET url = ?, new_win = ? WHERE id = ?", (req['url'], req['new_win'], req['id']))
     return resp_suc if suc else resp_err
   if req['action'] == "delete":
     if 'id' not in ks: return resp_err
+    # TODO remove suc
     res, suc = db_exec(f"DELETE FROM {TABLE_NAME} WHERE id = ?", (req['id'],))
     return resp_suc if suc else resp_err
   return resp_err
 
 @app.route('/r/<path:id>', methods=['GET'])
 def link(id):
-  res, suc = db_exec(f"SELECT id, url, new_win FROM {TABLE_NAME} WHERE id = ?", (id,))
-  if not suc: abort(503)
+  res = db_exec(f"SELECT id, url, new_win FROM {TABLE_NAME} WHERE id = ?", (id,))
   if len(res) == 0: abort(404)
   url = res[0][1]
   new_win = res[0][2]
@@ -138,8 +141,7 @@ def link(id):
 @auth.login_required
 @db_check
 def index():
-  redirects, suc = get_redirects()
-  if not suc: raise mariadb.error("Generic error")
+  redirects = get_redirects()
   return render_template('home.html', redirects=redirects)
 
 @app.route('/add', endpoint='add')
