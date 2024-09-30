@@ -102,24 +102,24 @@ def config():
   req = request.json
   if req['action'] == "init":
     if not check_missing_table_or_function(): return resp_err("Database is already initialized.")
-    db_exec(f"CREATE TABLE IF NOT EXISTS {TABLE_NAME} (id VARCHAR(32) NOT NULL, url VARCHAR({MAX_URL_LENGTH}) NOT NULL, new_win BOOLEAN NOT NULL, PRIMARY KEY (id)) ENGINE = InnoDB")
+    db_exec(f"CREATE TABLE IF NOT EXISTS {TABLE_NAME} (id VARCHAR(32) NOT NULL, url VARCHAR({MAX_URL_LENGTH}) NOT NULL, new_tab BOOLEAN NOT NULL, PRIMARY KEY (id)) ENGINE = InnoDB")
     db_exec(f"CREATE FUNCTION IF NOT EXISTS {FUNCTION_NAME}() RETURNS CHAR(32) BEGIN RETURN LOWER(CONCAT(HEX(RANDOM_BYTES(4)), HEX(RANDOM_BYTES(2)), '4', SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), HEX(FLOOR(ASCII(RANDOM_BYTES(1)) / 64) + 8), SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), hex(RANDOM_BYTES(6)))); END;")
     return resp_suc("Database is now initialized and ready.") if not check_missing_table_or_function() else resp_err("Database could not be initialized.")
   ks = req.keys()
   if 'action' not in ks:
     return resp_err("No action was requested.")
   if req['action'] == "new":
-    if 'url' not in ks or 'new_win' not in ks: return resp_err
-    if len(req['url']) > MAX_URL_LENGTH or str(req['new_win']).lower() not in ["true", "false", "1", "0"]: return resp_err
+    if 'url' not in ks or 'new_tab' not in ks: return resp_err
+    if len(req['url']) > MAX_URL_LENGTH or str(req['new_tab']).lower() not in ["true", "false", "1", "0"]: return resp_err
     suc = False
     # TODO remove suc
-    res, suc = db_exec(f"INSERT INTO test VALUES({FUNCTION_NAME}(), ?, ?)", (req['url'], req['new_win']))
+    res, suc = db_exec(f"INSERT INTO test VALUES({FUNCTION_NAME}(), ?, ?)", (req['url'], req['new_tab']))
     return resp_suc if suc else resp_err
   if req['action'] == "edit":
-    if 'id' not in ks or 'url' not in ks or 'new_win' not in ks: return resp_err
-    if len(req['url']) > MAX_URL_LENGTH or str(req['new_win']).lower() not in ["true", "false", "1", "0"]: return resp_err
+    if 'id' not in ks or 'url' not in ks or 'new_tab' not in ks: return resp_err
+    if len(req['url']) > MAX_URL_LENGTH or str(req['new_tab']).lower() not in ["true", "false", "1", "0"]: return resp_err
     # TODO remove suc
-    res, suc = db_exec(f"UPDATE {TABLE_NAME} SET url = ?, new_win = ? WHERE id = ?", (req['url'], req['new_win'], req['id']))
+    res, suc = db_exec(f"UPDATE {TABLE_NAME} SET url = ?, new_tab = ? WHERE id = ?", (req['url'], req['new_tab'], req['id']))
     return resp_suc if suc else resp_err
   if req['action'] == "delete":
     if 'id' not in ks: return resp_err
@@ -131,12 +131,12 @@ def config():
 @app.route('/r/<path:id>', methods=['GET'])
 # TODO rename link to redir
 def link(id):
-  res = db_exec(f"SELECT id, url, new_win FROM {TABLE_NAME} WHERE id = ?", (id,))
+  res = db_exec(f"SELECT id, url, new_tab FROM {TABLE_NAME} WHERE id = ?", (id,))
   if len(res) == 0: abort(404)
   url = res[0][1]
-  new_win = res[0][2]
-  if new_win: return render_template('link_new_win.html', link=url)
-  else: return render_template('link_same_win.html', link=url)
+  new_tab = res[0][2]
+  if new_tab: return render_template('link_new_tab.html', link=url)
+  else: return render_template('link_same_tab.html', link=url)
 
 @app.route('/', endpoint='index')
 @auth.login_required
