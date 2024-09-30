@@ -12,10 +12,10 @@
   <h4 class="mb-2 pb-2 border-bottom">Overview</h4>
   <p class="mb-1">Total amount of registered redirects: {{ redirects|length }}</p>
   {% if redirects|length != 0 %}
-  <p class="mb-1">List of all redirects:</p>
+  <p class="mb-2">List of all redirects:</p>
   <ul class="list-group" style="max-height: 50lvh; overflow:scroll; -webkit-overflow-scrolling: touch; word-wrap: break-word;">
-    {% for id, link in redirects %}
-    <li class="list-group-item"><strong>{{ id }}</strong><br>{{ link }}</li>
+    {% for id, url, new_win in redirects %}
+    <li class="list-group-item"><strong>{{ id }}</strong><br>{{ url }}</li>
     {% endfor %}
   </ul>
   {% else %}

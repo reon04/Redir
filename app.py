@@ -113,7 +113,7 @@ def config():
     if len(req['url']) > MAX_URL_LENGTH or str(req['new_win']).lower() not in ["true", "false", "1", "0"]: return resp_err
     suc = False
     # TODO remove suc
-    res, suc = db_exec(f"INSERT INTO test VALUES('{FUNCTION_NAME}(), ?, ?)", (req['url'], req['new_win']))
+    res, suc = db_exec(f"INSERT INTO test VALUES({FUNCTION_NAME}(), ?, ?)", (req['url'], req['new_win']))
     return resp_suc if suc else resp_err
   if req['action'] == "edit":
     if 'id' not in ks or 'url' not in ks or 'new_win' not in ks: return resp_err
@@ -129,6 +129,7 @@ def config():
   return resp_err
 
 @app.route('/r/<path:id>', methods=['GET'])
+# TODO rename link to redir
 def link(id):
   res = db_exec(f"SELECT id, url, new_win FROM {TABLE_NAME} WHERE id = ?", (id,))
   if len(res) == 0: abort(404)
