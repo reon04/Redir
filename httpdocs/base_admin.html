@@ -66,6 +66,8 @@
           tooltip.update();
         }, 3000)
       });
+      // remove bs-alert parameters from url
+      window.history.replaceState(null, document.title, window.location.pathname);
       // auto close of bs-alerts
       document.querySelectorAll('.alert').forEach((alert) => {
           new bootstrap.Alert(alert);
