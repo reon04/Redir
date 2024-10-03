@@ -144,14 +144,13 @@ def config():
     return resp_err(f"Internal server error.")
 
 @app.route('/r/<path:id>', methods=['GET'])
-# TODO rename link to redir
-def link(id):
+def redir(id):
   res = db_exec(f"SELECT id, url, new_tab FROM {TABLE_NAME} WHERE id = ?", (id,))
   if len(res) == 0: abort(404)
   url = res[0][1]
   new_tab = res[0][2]
-  if new_tab: return render_template('link_new_tab.html', link=url)
-  else: return render_template('link_same_tab.html', link=url)
+  if new_tab: return render_template('redir_new_tab.html', url=url)
+  else: return render_template('redir_same_tab.html', url=url)
 
 @app.route('/', endpoint='index')
 @auth.login_required
