@@ -19,9 +19,9 @@
       <button class="btn btn-clipboard btn-icon btn-sm btn-light" style="float:right" type="button" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Copy to Clipboard" data-clipboard-text="{{ request.host }}/r/{{ id }}"><i class="bi bi-clipboard"></i></button>
       <p class="m-0" style="font-size: 15px; font-family: 'Courier New', Courier, monospace;"><b>{{ id }}</b></p>
       {% if new_tab %}
-      <p class="m-0" style="font-size: 10px; color: violet;">opens in new tab</p>
+      <p class="m-0" style="font-size: 10px; color: rgb(100, 209, 213);">opens in new tab</p>
       {% else %}
-      <p class="m-0" style="font-size: 10px; color: rgb(100, 209, 213);">opens in same tab</p>
+      <p class="m-0" style="font-size: 10px; color: violet;">opens in same tab</p>
       {% endif %}
       <p class="m-0">{{ url }}</p>
     </li>

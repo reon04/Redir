@@ -76,7 +76,7 @@ def check_missing_table_or_function():
   return len(db_exec(f"SHOW TABLES LIKE '{TABLE_NAME}'")) == 0 or len(db_exec(f"SHOW FUNCTION STATUS LIKE '{FUNCTION_NAME}'")) == 0
 
 def get_redirects():
-  return db_exec(f"SELECT * FROM {TABLE_NAME}")
+  return db_exec(f"SELECT * FROM {TABLE_NAME} ORDER BY url")
 
 def resp_suc(msg):
   return {'result': "success", 'message': msg}
