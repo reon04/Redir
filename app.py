@@ -1,4 +1,5 @@
 import os
+import re
 from flask import Flask, request, abort, send_from_directory, render_template
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -90,6 +91,17 @@ def db_check(func):
     else: return func(*args, **kwargs)
   return inner
 
+def validate_url(url):
+  import re
+  regex = re.compile(
+    r'^(https?://)?'  # http:// or https:// protocol (optional)
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+    r'localhost|'  # localhost...
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+    r'(?::\d+)?'  # optional port
+    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+  return url is not None and regex.search(url) is not None
+
 @auth.verify_password
 def verify_password(username, password):
   if username in http_users and check_password_hash(http_users.get(username), password):
@@ -98,35 +110,38 @@ def verify_password(username, password):
 @app.route('/config', methods=['POST'])
 @auth.login_required
 def config():
-  if not db_connect(): return resp_err("Database connection could not be established.")
-  req = request.json
-  if req['action'] == "init":
-    if not check_missing_table_or_function(): return resp_err("Database is already initialized.")
-    db_exec(f"CREATE TABLE IF NOT EXISTS {TABLE_NAME} (id VARCHAR(32) NOT NULL, url VARCHAR({MAX_URL_LENGTH}) NOT NULL, new_tab BOOLEAN NOT NULL, PRIMARY KEY (id)) ENGINE = InnoDB")
-    db_exec(f"CREATE FUNCTION IF NOT EXISTS {FUNCTION_NAME}() RETURNS CHAR(32) BEGIN RETURN LOWER(CONCAT(HEX(RANDOM_BYTES(4)), HEX(RANDOM_BYTES(2)), '4', SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), HEX(FLOOR(ASCII(RANDOM_BYTES(1)) / 64) + 8), SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), hex(RANDOM_BYTES(6)))); END;")
-    return resp_suc("Database is now initialized and ready.") if not check_missing_table_or_function() else resp_err("Database could not be initialized.")
-  ks = req.keys()
-  if 'action' not in ks:
-    return resp_err("No action was requested.")
-  if req['action'] == "new":
-    if 'url' not in ks or 'new_tab' not in ks: return resp_err
-    if len(req['url']) > MAX_URL_LENGTH or str(req['new_tab']).lower() not in ["true", "false", "1", "0"]: return resp_err
-    suc = False
-    # TODO remove suc
-    res, suc = db_exec(f"INSERT INTO test VALUES({FUNCTION_NAME}(), ?, ?)", (req['url'], req['new_tab']))
-    return resp_suc if suc else resp_err
-  if req['action'] == "edit":
-    if 'id' not in ks or 'url' not in ks or 'new_tab' not in ks: return resp_err
-    if len(req['url']) > MAX_URL_LENGTH or str(req['new_tab']).lower() not in ["true", "false", "1", "0"]: return resp_err
-    # TODO remove suc
-    res, suc = db_exec(f"UPDATE {TABLE_NAME} SET url = ?, new_tab = ? WHERE id = ?", (req['url'], req['new_tab'], req['id']))
-    return resp_suc if suc else resp_err
-  if req['action'] == "delete":
-    if 'id' not in ks: return resp_err
-    # TODO remove suc
-    res, suc = db_exec(f"DELETE FROM {TABLE_NAME} WHERE id = ?", (req['id'],))
-    return resp_suc if suc else resp_err
-  return resp_err
+  try:
+    if not db_connect(): return resp_err("Database connection could not be established.")
+    req = request.json
+    ks = req.keys()
+    if 'action' not in ks:
+      return resp_err("No action was requested.")
+    if req['action'] == "init":
+      if not check_missing_table_or_function(): return resp_err("Database is already initialized.")
+      db_exec(f"CREATE TABLE IF NOT EXISTS {TABLE_NAME} (id VARCHAR(32) NOT NULL, url VARCHAR({MAX_URL_LENGTH}) NOT NULL, new_tab BOOLEAN NOT NULL, PRIMARY KEY (id)) ENGINE = InnoDB")
+      db_exec(f"CREATE FUNCTION IF NOT EXISTS {FUNCTION_NAME}() RETURNS CHAR(32) BEGIN RETURN LOWER(CONCAT(HEX(RANDOM_BYTES(4)), HEX(RANDOM_BYTES(2)), '4', SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), HEX(FLOOR(ASCII(RANDOM_BYTES(1)) / 64) + 8), SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3), hex(RANDOM_BYTES(6)))); END;")
+      return resp_suc("Database is now initialized and ready.") if not check_missing_table_or_function() else resp_err("Database could not be initialized.")
+    if req['action'] == "new":
+      if 'url' not in ks or 'new_tab' not in ks: return resp_err("At least one of the required arguments 'url' and 'new_tab' is missing in the request.")
+      if not validate_url(req['url']) or len(req['url']) > MAX_URL_LENGTH: return resp_err(f"URL is not in a valid format (must be a valid url and max {MAX_URL_LENGTH} characters long).")
+      print(req['new_tab'])
+      if req['new_tab'] not in [0, 1]: return resp_err("Argument new_tab is not in a valid format (must be an integer with value 0 or 1)")
+      id = db_exec(f"INSERT INTO {TABLE_NAME} VALUES({FUNCTION_NAME}(), ?, ?) RETURNING id", (req['url'], req['new_tab']))[0][0]
+      return resp_suc(f"Added new redirect with id '{id}'")
+    if req['action'] == "edit":
+      if 'id' not in ks or 'url' not in ks or 'new_tab' not in ks: return resp_err
+      if len(req['url']) > MAX_URL_LENGTH or str(req['new_tab']).lower() not in ["true", "false", "1", "0"]: return resp_err
+      # TODO remove suc
+      res, suc = db_exec(f"UPDATE {TABLE_NAME} SET url = ?, new_tab = ? WHERE id = ?", (req['url'], req['new_tab'], req['id']))
+      return resp_suc if suc else resp_err
+    if req['action'] == "delete":
+      if 'id' not in ks: return resp_err
+      # TODO remove suc
+      res, suc = db_exec(f"DELETE FROM {TABLE_NAME} WHERE id = ?", (req['id'],))
+      return resp_suc if suc else resp_err
+    return resp_err
+  except:
+    return resp_err(f"Internal server error.")
 
 @app.route('/r/<path:id>', methods=['GET'])
 # TODO rename link to redir
@@ -149,7 +164,7 @@ def index():
 @auth.login_required
 @db_check
 def add():
-  pass
+  return render_template('add.html', max_url_len=MAX_URL_LENGTH)
 
 @app.route('/edit', endpoint='edit')
 @auth.login_required

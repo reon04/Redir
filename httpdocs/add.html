@@ -1,0 +1,43 @@
+{% extends "base_admin.html" %}
+
+{% block nav_items %}
+<a class="nav-link" href="/">Home</a>
+<a class="nav-link active" aria-current="page" href="/add">Add</a>
+<a class="nav-link" href="/edit">Edit</a>
+<a class="nav-link" href="/delete">Delete</a>
+{% endblock nav_items %}
+
+{% block content %}
+<div class="mb-3 p-3 text-black rounded shadow">
+  <h4 class="mb-2 pb-2 border-bottom">Add redirect</h4>
+  <form id="addForm">
+    <div class="mb-3">
+      <label for="urlInput1" class="form-label">URL</label>
+      <input type="text" class="form-control" id="urlInput" aria-describedby="urlHelp" placeholder="www.example.com" required="required" inputmode="url" pattern=".{1,{{ max_url_len }}}" title="Please enter 1 to {{ max_url_len }} characters">
+      <div id="urlHelp" class="form-text">Redirect users to this URL.</div>
+    </div>
+    <div class="mb-3 form-check">
+      <input type="checkbox" class="form-check-input" id="newTabCheck">
+      <label class="form-check-label" for="newTabCheck">Open redirect in new tab</label>
+    </div>
+    <button type="submit" class="btn btn-success">Add</button>
+  </form>
+</div>
+{% endblock content %}
+
+{% block script %}
+<script>
+  addForm.onsubmit = async (e) => {
+    e.preventDefault();
+    data = {'action': "new", 'url': urlInput.value, 'new_tab': Number(newTabCheck.checked)}
+    const response = await fetch("/config", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(data)
+    });
+    data = await response.json()
+    if (data['result'] === "success") window.location.replace(`/add?suc=${data['message']}`);
+    if (data['result'] === "error") window.location.replace(`/add?err=${data['message']}`);
+  };
+</script>  
+{% endblock script %}
