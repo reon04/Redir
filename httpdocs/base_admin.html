@@ -25,13 +25,13 @@
     </nav>
     <main class="container-lg">
       {% if request.args.get('suc') != None %}
-      <div class="alert alert-success alert-dismissible fade show" data-timeout="5000">
+      <div class="alert alert-success alert-dismissible fade show" data-timeout="10000">
         <strong>Success!</strong> {{ request.args.get('suc') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
       {% endif %}
       {% if request.args.get('err') != None %}
-      <div class="alert alert-danger alert-dismissible fade show" data-timeout="5000">
+      <div class="alert alert-danger alert-dismissible fade show" data-timeout="10000">
         <strong>Error!</strong> {{ request.args.get('err') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
