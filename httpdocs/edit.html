@@ -1,0 +1,75 @@
+{% extends "base_admin.html" %}
+
+{% block nav_items %}
+<a class="nav-link" href="/">Home</a>
+<a class="nav-link" href="/add">Add</a>
+<a class="nav-link active" aria-current="page" href="/edit">Edit</a>
+<a class="nav-link" href="/delete">Delete</a>
+{% endblock nav_items %}
+
+{% block content %}
+<div class="mb-3 p-3 text-black rounded shadow">
+  <h4 class="mb-2 pb-2 border-bottom">Edit redirect</h4>
+  <form id="editForm">
+    <div class="mb-3">
+      <label for="redirectSelect" class="form-label">Select redirect</label>
+      <select id="redirectSelect" class="w-100 mb-3" required>
+        <option value="" selected disbaled hidden>Choose...</option>
+        {% for id, url, new_tab in redirects %}
+        <option value="{{ id }}" data-id="{{ id }}" data-url="{{ url }}" data-new-tab="{{ new_tab }}">{{ id }}</option>
+        {% endfor %}
+      </select>
+      <label for="idInput" class="form-label">ID</label>
+      <input type="text" class="form-control" id="idInput" aria-describedby="urlHelp" placeholder="id" required="required" pattern=".{1,{{ max_url_len }}}" title="Please enter 1 to {{ max_url_len }} characters">
+      <div id="idHelp" class="form-text mb-3">Choose a custom id.</div>
+      <label for="urlInput" class="form-label">URL</label>
+      <input type="text" class="form-control" id="urlInput" aria-describedby="urlHelp" placeholder="www.example.com" required="required" inputmode="url" pattern=".{1,{{ max_url_len }}}" title="Please enter 1 to {{ max_url_len }} characters">
+      <div id="urlHelp" class="form-text">Redirect users to this URL.</div>
+    </div>
+    <div class="mb-3 form-check">
+      <input type="checkbox" class="form-check-input" id="newTabCheck">
+      <label class="form-check-label" for="newTabCheck">Open redirect in new tab</label>
+    </div>
+    <button type="submit" class="btn btn-warning">Update</button>
+  </form>
+</div>
+{% endblock content %}
+
+{% block script %}
+<script>
+  redirectSelect.onchange = () => {
+    var selected = redirectSelect.options[redirectSelect.selectedIndex];
+    idInput.value = selected.getAttribute('data-id');
+    urlInput.value = selected.getAttribute('data-url');
+    newTabCheck.checked = (selected.getAttribute('data-new-tab') === "1");
+  }
+  editForm.onsubmit = async (e) => {
+    sessionStorage.setItem("editRedirectSelect", redirectSelect.selectedIndex);
+    sessionStorage.setItem("editIdInput", idInput.value);
+    sessionStorage.setItem("editUrlInput", urlInput.value);
+    sessionStorage.setItem("editNewTabCheck", newTabCheck.checked);
+    e.preventDefault();
+    data = {'action': "edit", 'old_id': redirectSelect.options[redirectSelect.selectedIndex].getAttribute('data-id'), 'new_id': idInput.value, 'url': urlInput.value, 'new_tab': Number(newTabCheck.checked)}
+    const response = await fetch("/config", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(data)
+    });
+    data = await response.json()
+    if (data['result'] === "success") {
+      window.location.replace(`/edit?suc=${data['message']}`);
+      sessionStorage.removeItem("editRedirectSelect");
+      sessionStorage.removeItem("editIdInput");
+      sessionStorage.removeItem("editUrlInput");
+      sessionStorage.removeItem("editNewTabCheck");
+    }
+    if (data['result'] === "error") window.location.replace(`/edit?err=${data['message']}`);
+  };
+  window.onload = () => {
+    if ((val = sessionStorage.getItem("editRedirectSelect")) != null) redirectSelect.selectedIndex = val;
+    if ((val = sessionStorage.getItem("editIdInput")) != null) idInput.value = val;
+    if ((val = sessionStorage.getItem("editUrlInput")) != null) urlInput.value = val;
+    if ((val = sessionStorage.getItem("editNewTabCheck")) != null) newTabCheck.checked = (val === 'true');
+  };
+</script>
+{% endblock script %}

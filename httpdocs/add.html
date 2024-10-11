@@ -28,8 +28,8 @@
 {% block script %}
 <script>
   addForm.onsubmit = async (e) => {
-    sessionStorage.setItem("urlInput", urlInput.value);
-    sessionStorage.setItem("newTabCheck", newTabCheck.checked);
+    sessionStorage.setItem("addUrlInput", urlInput.value);
+    sessionStorage.setItem("addNewTabCheck", newTabCheck.checked);
     e.preventDefault();
     data = {'action': "new", 'url': urlInput.value, 'new_tab': Number(newTabCheck.checked)}
     const response = await fetch("/config", {
@@ -40,14 +40,14 @@
     data = await response.json()
     if (data['result'] === "success") {
       window.location.replace(`/add?suc=${data['message']}`);
-      sessionStorage.removeItem("urlInput");
-      sessionStorage.removeItem("newTabCheck");
+      sessionStorage.removeItem("addUrlInput");
+      sessionStorage.removeItem("addNewTabCheck");
     }
     if (data['result'] === "error") window.location.replace(`/add?err=${data['message']}`);
   };
   window.onload = () => {
-    if ((val = sessionStorage.getItem("urlInput")) != null) urlInput.value = val;
-    if ((val = sessionStorage.getItem("newTabCheck")) != null) newTabCheck.checked = (val === 'true');
+    if ((val = sessionStorage.getItem("addUrlInput")) != null) urlInput.value = val;
+    if ((val = sessionStorage.getItem("addNewTabCheck")) != null) newTabCheck.checked = (val === 'true');
   };
 </script>  
 {% endblock script %}

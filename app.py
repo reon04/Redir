@@ -124,22 +124,21 @@ def config():
     if req['action'] == "new":
       if 'url' not in ks or 'new_tab' not in ks: return resp_err("At least one of the required arguments 'url' and 'new_tab' is missing in the request.")
       if not validate_url(req['url']) or len(req['url']) > MAX_URL_LENGTH: return resp_err(f"URL is not in a valid format (must be a valid url and max {MAX_URL_LENGTH} characters long).")
-      print(req['new_tab'])
       if req['new_tab'] not in [0, 1]: return resp_err("Argument new_tab is not in a valid format (must be an integer with value 0 or 1)")
       id = db_exec(f"INSERT INTO {TABLE_NAME} VALUES({FUNCTION_NAME}(), ?, ?) RETURNING id", (req['url'], req['new_tab']))[0][0]
       return resp_suc(f"Added new redirect with id '{id}'")
     if req['action'] == "edit":
-      if 'id' not in ks or 'url' not in ks or 'new_tab' not in ks: return resp_err
-      if len(req['url']) > MAX_URL_LENGTH or str(req['new_tab']).lower() not in ["true", "false", "1", "0"]: return resp_err
-      # TODO remove suc
-      res, suc = db_exec(f"UPDATE {TABLE_NAME} SET url = ?, new_tab = ? WHERE id = ?", (req['url'], req['new_tab'], req['id']))
-      return resp_suc if suc else resp_err
+      if 'old_id' not in ks or 'new_id' not in ks or 'url' not in ks or 'new_tab' not in ks: return resp_err("At least one of the required arguments 'old_id', 'new_id', 'url' and 'new_tab' is missing in the request.")
+      if not validate_url(req['url']) or len(req['url']) > MAX_URL_LENGTH: return resp_err(f"URL is not in a valid format (must be a valid url and max {MAX_URL_LENGTH} characters long).")
+      if req['new_tab'] not in [0, 1]: return resp_err("Argument new_tab is not in a valid format (must be an integer with value 0 or 1)")
+      res = db_exec(f"UPDATE {TABLE_NAME} SET id = ?, url = ?, new_tab = ? WHERE id = ?", (req['new_id'], req['url'], req['new_tab'], req['old_id']))
+      return resp_suc("")
     if req['action'] == "delete":
       if 'id' not in ks: return resp_err
       # TODO remove suc
       res, suc = db_exec(f"DELETE FROM {TABLE_NAME} WHERE id = ?", (req['id'],))
       return resp_suc if suc else resp_err
-    return resp_err
+    return resp_err("Requested action is not supported.")
   except:
     return resp_err(f"Internal server error.")
 
@@ -169,7 +168,8 @@ def add():
 @auth.login_required
 @db_check
 def edit():
-  pass
+  redirects = get_redirects()
+  return render_template('edit.html', redirects=redirects)
 
 @app.route('/delete', endpoint='delete')
 @auth.login_required
