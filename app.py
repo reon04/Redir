@@ -132,7 +132,7 @@ def config():
       if not validate_url(req['url']) or len(req['url']) > MAX_URL_LENGTH: return resp_err(f"URL is not in a valid format (must be a valid url and max {MAX_URL_LENGTH} characters long).")
       if req['new_tab'] not in [0, 1]: return resp_err("Argument new_tab is not in a valid format (must be an integer with value 0 or 1)")
       if 'id' in ks:
-        if len(db_exec(f"SELECT id FROM {TABLE_NAME} WHERE id = ?", (req['id'],))) > 0: return resp_err("ID already exists.")
+        if len(db_exec(f"SELECT id FROM {TABLE_NAME} WHERE id = ?", (req['id'],))) > 0: return resp_err(f"ID '{req['id']}' already exists.")
         else: id = db_exec(f"INSERT INTO {TABLE_NAME} VALUES(?, ?, ?) RETURNING id", (req['id'], req['url'], req['new_tab']))[0][0]
       else: id = db_exec(f"INSERT INTO {TABLE_NAME} VALUES({FUNCTION_NAME}(), ?, ?) RETURNING id", (req['url'], req['new_tab']))[0][0]
       return resp_suc(f"Added new redirect with id '{id}'.")
@@ -141,14 +141,14 @@ def config():
       if not validate_id(req['new_id']): return resp_err(f"ID is not in a valid format (must contain only letters, numbers or the following chars $-_.!*'() and be max {MAX_ID_LENGTH} characters long).")
       if not validate_url(req['url']) or len(req['url']) > MAX_URL_LENGTH: return resp_err(f"URL is not in a valid format (must be a valid url and max {MAX_URL_LENGTH} characters long).")
       if req['new_tab'] not in [0, 1]: return resp_err("Argument new_tab is not in a valid format (must be an integer with value 0 or 1)")
-      if req['old_id'] != req['new_id'] and len(db_exec(f"SELECT id FROM {TABLE_NAME} WHERE id = ?", (req['new_id'],))) > 0: return resp_err("ID already exists.")
+      if req['old_id'] != req['new_id'] and len(db_exec(f"SELECT id FROM {TABLE_NAME} WHERE id = ?", (req['new_id'],))) > 0: return resp_err(f"ID '{req['new_id']}' already exists.")
       db_exec(f"UPDATE {TABLE_NAME} SET id = ?, url = ?, new_tab = ? WHERE id = ?", (req['new_id'], req['url'], req['new_tab'], req['old_id']))
       return resp_suc(f"Changed redirect with id '{req['new_id']}'.")
     if req['action'] == "delete":
-      if 'id' not in ks: return resp_err
-      # TODO remove suc
-      res, suc = db_exec(f"DELETE FROM {TABLE_NAME} WHERE id = ?", (req['id'],))
-      return resp_suc if suc else resp_err
+      if 'id' not in ks: return resp_err("The required argument 'id' is missing in the request.")
+      if len(db_exec(f"SELECT id FROM {TABLE_NAME} WHERE id = ?", (req['id'],))) == 0: return resp_err(f"ID '{req['id']}' does not exist.")
+      db_exec(f"DELETE FROM {TABLE_NAME} WHERE id = ?", (req['id'],))
+      return resp_suc(f"Deleted redirect with id '{req['id']}'")
     return resp_err("Requested action is not supported.")
   except:
     return resp_err(f"Internal server error.")
@@ -186,7 +186,8 @@ def edit():
 @auth.login_required
 @db_check
 def delete():
-  pass
+  redirects = get_redirects()
+  return render_template('delete.html', redirects=redirects)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port="81")
