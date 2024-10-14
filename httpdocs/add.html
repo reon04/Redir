@@ -12,6 +12,9 @@
   <h4 class="mb-2 pb-2 border-bottom">Add redirect</h4>
   <form id="addForm">
     <div class="mb-3">
+      <label for="idInput" class="form-label">ID</label>
+      <input type="text" class="form-control" id="idInput" aria-describedby="idHelp" placeholder="id" pattern=".{1,{{ max_id_len }}}" title="Please enter 1 to {{ max_id_len }} characters">
+      <div id="idHelp" class="form-text mb-3">Choose a custom id. Leave empty to auto-generate id.</div> 
       <label for="urlInput" class="form-label">URL</label>
       <input type="text" class="form-control" id="urlInput" aria-describedby="urlHelp" placeholder="www.example.com" required="required" inputmode="url" pattern=".{1,{{ max_url_len }}}" title="Please enter 1 to {{ max_url_len }} characters">
       <div id="urlHelp" class="form-text">Redirect users to this URL.</div>
@@ -28,10 +31,9 @@
 {% block script %}
 <script>
   addForm.onsubmit = async (e) => {
-    sessionStorage.setItem("addUrlInput", urlInput.value);
-    sessionStorage.setItem("addNewTabCheck", newTabCheck.checked);
     e.preventDefault();
-    data = {'action': "new", 'url': urlInput.value, 'new_tab': Number(newTabCheck.checked)}
+    data = {'action': "new", 'url': urlInput.value, 'new_tab': Number(newTabCheck.checked)};
+    if (idInput.value !== "") data['id'] = idInput.value;
     const response = await fetch("/config", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
@@ -40,14 +42,21 @@
     data = await response.json()
     if (data['result'] === "success") {
       window.location.replace(`/add?suc=${data['message']}`);
+      sessionStorage.removeItem("addIdInput");
       sessionStorage.removeItem("addUrlInput");
       sessionStorage.removeItem("addNewTabCheck");
     }
     if (data['result'] === "error") window.location.replace(`/add?err=${data['message']}`);
   };
   window.onload = () => {
+    if ((val = sessionStorage.getItem("addIdInput")) != null) idInput.value = val;
     if ((val = sessionStorage.getItem("addUrlInput")) != null) urlInput.value = val;
     if ((val = sessionStorage.getItem("addNewTabCheck")) != null) newTabCheck.checked = (val === 'true');
+  };
+  window.onbeforeunload = () => {
+    sessionStorage.setItem("addIdInput", idInput.value);
+    sessionStorage.setItem("addUrlInput", urlInput.value);
+    sessionStorage.setItem("addNewTabCheck", newTabCheck.checked);
   };
 </script>  
 {% endblock script %}

@@ -20,7 +20,7 @@
         {% endfor %}
       </select>
       <label for="idInput" class="form-label">ID</label>
-      <input type="text" class="form-control" id="idInput" aria-describedby="urlHelp" placeholder="id" required="required" pattern=".{1,{{ max_url_len }}}" title="Please enter 1 to {{ max_url_len }} characters">
+      <input type="text" class="form-control" id="idInput" aria-describedby="idHelp" placeholder="<id>" required="required" pattern=".{1,{{ max_id_len }}}" title="Please enter 1 to {{ max_id_len }} characters">
       <div id="idHelp" class="form-text mb-3">Choose a custom id.</div>
       <label for="urlInput" class="form-label">URL</label>
       <input type="text" class="form-control" id="urlInput" aria-describedby="urlHelp" placeholder="www.example.com" required="required" inputmode="url" pattern=".{1,{{ max_url_len }}}" title="Please enter 1 to {{ max_url_len }} characters">
@@ -44,10 +44,6 @@
     newTabCheck.checked = (selected.getAttribute('data-new-tab') === "1");
   }
   editForm.onsubmit = async (e) => {
-    sessionStorage.setItem("editRedirectSelect", redirectSelect.selectedIndex);
-    sessionStorage.setItem("editIdInput", idInput.value);
-    sessionStorage.setItem("editUrlInput", urlInput.value);
-    sessionStorage.setItem("editNewTabCheck", newTabCheck.checked);
     e.preventDefault();
     data = {'action': "edit", 'old_id': redirectSelect.options[redirectSelect.selectedIndex].getAttribute('data-id'), 'new_id': idInput.value, 'url': urlInput.value, 'new_tab': Number(newTabCheck.checked)}
     const response = await fetch("/config", {
@@ -70,6 +66,12 @@
     if ((val = sessionStorage.getItem("editIdInput")) != null) idInput.value = val;
     if ((val = sessionStorage.getItem("editUrlInput")) != null) urlInput.value = val;
     if ((val = sessionStorage.getItem("editNewTabCheck")) != null) newTabCheck.checked = (val === 'true');
+  };
+  window.onbeforeunload = () => {
+    sessionStorage.setItem("editRedirectSelect", redirectSelect.selectedIndex);
+    sessionStorage.setItem("editIdInput", idInput.value);
+    sessionStorage.setItem("editUrlInput", urlInput.value);
+    sessionStorage.setItem("editNewTabCheck", newTabCheck.checked);
   };
 </script>
 {% endblock script %}
