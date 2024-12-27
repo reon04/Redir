@@ -19,7 +19,7 @@ url_regex = re.compile(
   r'(?::\d+)?'  # optional port
   r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
-app = Flask(__name__, template_folder = 'httpdocs')
+app = Flask(__name__)
 auth = HTTPBasicAuth()
 
 http_users = {
