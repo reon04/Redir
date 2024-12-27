@@ -1,6 +1,16 @@
+<!DOCTYPE html>
 <html>
-  <head></head>
+  <head>
+    <title>Redirecting...</title>
+    <script>
+      window.onload=redirect;
+      function redirect() {
+        window.open("{{ url }}", "_self");
+      }
+    </script>
+  </head>
   <body>
-    <h1>same tab: {{ url }}</h1>
+    <h2>Redirecting...</h2>
+    <p>If you are not automatically redirected, please follow <a href="{{ url }}" target="_self">this link</a>.</p>
   </body>
 </html>

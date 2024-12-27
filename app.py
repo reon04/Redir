@@ -12,7 +12,7 @@ MAX_URL_LENGTH = 512
 
 id_regex = re.compile(r"^[a-zA-Z0-9\$\-\_\.\!\*\'\(\)\,]{1," + re.escape(str(MAX_ID_LENGTH)) + r"}$")
 url_regex = re.compile(
-  r'^(https?://)?'  # http:// or https:// protocol (optional)
+  r'^https?://'  # http:// or https:// protocol
   r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
   r'localhost|'  # localhost...
   r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
@@ -191,4 +191,4 @@ def delete():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port="81")
-    #TODO Logo hinzufügen, auto close entfernen
+    #TODO Logo & favicon hinzufügen

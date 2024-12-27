@@ -1,6 +1,17 @@
+<!DOCTYPE html>
 <html>
-  <head></head>
+  <head>
+    <title>Opening New Tab...</title>
+    <script>
+      window.onload=redirect;
+      function redirect() {
+        window.open("{{ url }}", "_blank");
+      }
+    </script>
+  </head>
   <body>
-    <h1>new tab: {{ url }}</h1>
+    <h2>Opening New Tab...</h2>
+    <p>If the new tab is not automatically opened, please click <a href="{{ url }}" target="_blank">this link</a>.</p>
+    <p>It may be that the new tab was blocked by the browser ("pop-up blocked"). In that case you should consider allowing pop-ups for this website so that new tabs are automatically opened.</p>
   </body>
 </html>

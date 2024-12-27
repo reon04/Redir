@@ -13,10 +13,10 @@
   <form id="addForm">
     <div class="mb-3">
       <label for="idInput" class="form-label">ID</label>
-      <input type="text" class="form-control" id="idInput" aria-describedby="idHelp" placeholder="id" pattern=".{1,{{ max_id_len }}}" title="Please enter 1 to {{ max_id_len }} characters">
+      <input type="text" class="form-control" id="idInput" aria-describedby="idHelp" placeholder="<id>" pattern=".{1,{{ max_id_len }}}" title="Please enter 1 to {{ max_id_len }} characters">
       <div id="idHelp" class="form-text mb-3">Choose a custom id. Leave empty to auto-generate id.</div> 
       <label for="urlInput" class="form-label">URL</label>
-      <input type="text" class="form-control" id="urlInput" aria-describedby="urlHelp" placeholder="www.example.com" required="required" inputmode="url" pattern=".{1,{{ max_url_len }}}" title="Please enter 1 to {{ max_url_len }} characters">
+      <input type="url" class="form-control" id="urlInput" aria-describedby="urlHelp" placeholder="https://www.example.com" required="required" inputmode="url" pattern=".{1,{{ max_url_len }}}" title="Please enter 1 to {{ max_url_len }} characters">
       <div id="urlHelp" class="form-text">Redirect users to this URL.</div>
     </div>
     <div class="mb-3 form-check">
