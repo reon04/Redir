@@ -189,6 +189,13 @@ def delete():
   redirects = get_redirects()
   return render_template('delete.html', redirects=redirects)
 
+@app.route('/favicon.ico')
+def favicon():
+  return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+@app.route('/logo.png')
+def logo():
+  return send_from_directory(os.path.join(app.root_path, 'static'), 'logo.png', mimetype='image/png')
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port="81")
-    #TODO Logo & favicon hinzufügen
