@@ -52,15 +52,30 @@
     data = await response.json()
     if (data['result'] === "success") {
       window.location.replace(`/delete?suc=${data['message']}`);
-      sessionStorage.removeItem("deleteRedirectSelect");
+      removeSessionStorageItems();
     }
     if (data['result'] === "error") window.location.replace(`/delete?err=${data['message']}`);
   };
   window.onload = () => {
-    if ((val = sessionStorage.getItem("deleteRedirectSelect")) != null) redirectSelect.selectedIndex = val;
+    if ((val = sessionStorage.getItem("prevPage")) != null && val !== "delete") removeSessionStorageItems(); 
+    if ((val = sessionStorage.getItem("redirectSelect")) != null) redirectSelect.selectedIndex = val;
+    if ((val = sessionStorage.getItem("idInput")) != null) idInput.value = val;
+    if ((val = sessionStorage.getItem("urlInput")) != null) urlInput.value = val;
+    if ((val = sessionStorage.getItem("newTabCheck")) != null) newTabCheck.checked = (val === 'true');
   };
   window.onbeforeunload = () => {
-    sessionStorage.setItem("deleteRedirectSelect", redirectSelect.selectedIndex);
+    sessionStorage.setItem("prevPage", "delete");
+    sessionStorage.setItem("redirectSelect", redirectSelect.selectedIndex);
+    sessionStorage.setItem("idInput", idInput.value);
+    sessionStorage.setItem("urlInput", urlInput.value);
+    sessionStorage.setItem("newTabCheck", newTabCheck.checked);
   };
+  function removeSessionStorageItems() {
+    sessionStorage.removeItem("prevPage");
+    sessionStorage.removeItem("redirectSelect");
+    sessionStorage.removeItem("idInput");
+    sessionStorage.removeItem("urlInput");
+    sessionStorage.removeItem("newTabCheck");
+  }
 </script>
 {% endblock script %}

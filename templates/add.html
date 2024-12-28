@@ -42,21 +42,28 @@
     data = await response.json()
     if (data['result'] === "success") {
       window.location.replace(`/add?suc=${data['message']}`);
-      sessionStorage.removeItem("addIdInput");
-      sessionStorage.removeItem("addUrlInput");
-      sessionStorage.removeItem("addNewTabCheck");
+      removeSessionStorageItems();
     }
     if (data['result'] === "error") window.location.replace(`/add?err=${data['message']}`);
   };
   window.onload = () => {
-    if ((val = sessionStorage.getItem("addIdInput")) != null) idInput.value = val;
-    if ((val = sessionStorage.getItem("addUrlInput")) != null) urlInput.value = val;
-    if ((val = sessionStorage.getItem("addNewTabCheck")) != null) newTabCheck.checked = (val === 'true');
+    if ((val = sessionStorage.getItem("prevPage")) != null && val !== "add") removeSessionStorageItems(); 
+    if ((val = sessionStorage.getItem("idInput")) != null) idInput.value = val;
+    if ((val = sessionStorage.getItem("urlInput")) != null) urlInput.value = val;
+    if ((val = sessionStorage.getItem("newTabCheck")) != null) newTabCheck.checked = (val === 'true');
   };
   window.onbeforeunload = () => {
-    sessionStorage.setItem("addIdInput", idInput.value);
-    sessionStorage.setItem("addUrlInput", urlInput.value);
-    sessionStorage.setItem("addNewTabCheck", newTabCheck.checked);
+    sessionStorage.setItem("prevPage", "add");
+    sessionStorage.setItem("idInput", idInput.value);
+    sessionStorage.setItem("urlInput", urlInput.value);
+    sessionStorage.setItem("newTabCheck", newTabCheck.checked);
   };
+  function removeSessionStorageItems() {
+    sessionStorage.removeItem("prevPage");
+    sessionStorage.removeItem("redirectSelect");
+    sessionStorage.removeItem("idInput");
+    sessionStorage.removeItem("urlInput");
+    sessionStorage.removeItem("newTabCheck");
+  }
 </script>  
 {% endblock script %}

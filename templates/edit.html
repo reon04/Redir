@@ -54,24 +54,30 @@
     data = await response.json()
     if (data['result'] === "success") {
       window.location.replace(`/edit?suc=${data['message']}`);
-      sessionStorage.removeItem("editRedirectSelect");
-      sessionStorage.removeItem("editIdInput");
-      sessionStorage.removeItem("editUrlInput");
-      sessionStorage.removeItem("editNewTabCheck");
+      removeSessionStorageItems();
     }
     if (data['result'] === "error") window.location.replace(`/edit?err=${data['message']}`);
   };
   window.onload = () => {
-    if ((val = sessionStorage.getItem("editRedirectSelect")) != null) redirectSelect.selectedIndex = val;
-    if ((val = sessionStorage.getItem("editIdInput")) != null) idInput.value = val;
-    if ((val = sessionStorage.getItem("editUrlInput")) != null) urlInput.value = val;
-    if ((val = sessionStorage.getItem("editNewTabCheck")) != null) newTabCheck.checked = (val === 'true');
+    if ((val = sessionStorage.getItem("prevPage")) != null && val !== "edit") removeSessionStorageItems(); 
+    if ((val = sessionStorage.getItem("redirectSelect")) != null) redirectSelect.selectedIndex = val;
+    if ((val = sessionStorage.getItem("idInput")) != null) idInput.value = val;
+    if ((val = sessionStorage.getItem("urlInput")) != null) urlInput.value = val;
+    if ((val = sessionStorage.getItem("newTabCheck")) != null) newTabCheck.checked = (val === 'true');
   };
   window.onbeforeunload = () => {
-    sessionStorage.setItem("editRedirectSelect", redirectSelect.selectedIndex);
-    sessionStorage.setItem("editIdInput", idInput.value);
-    sessionStorage.setItem("editUrlInput", urlInput.value);
-    sessionStorage.setItem("editNewTabCheck", newTabCheck.checked);
+    sessionStorage.setItem("prevPage", "edit");
+    sessionStorage.setItem("redirectSelect", redirectSelect.selectedIndex);
+    sessionStorage.setItem("idInput", idInput.value);
+    sessionStorage.setItem("urlInput", urlInput.value);
+    sessionStorage.setItem("newTabCheck", newTabCheck.checked);
   };
+  function removeSessionStorageItems() {
+    sessionStorage.removeItem("prevPage");
+    sessionStorage.removeItem("redirectSelect");
+    sessionStorage.removeItem("idInput");
+    sessionStorage.removeItem("urlInput");
+    sessionStorage.removeItem("newTabCheck");
+  }
 </script>
 {% endblock script %}
