@@ -1,10 +1,10 @@
 {% extends "base_admin.html" %}
 
 {% block nav_items %}
-<a class="nav-link active" aria-current="page" href="/">Home</a>
-<a class="nav-link" href="/add">Add</a>
-<a class="nav-link" href="/edit">Edit</a>
-<a class="nav-link" href="/delete">Delete</a>
+<a class="nav-link active" aria-current="page" href="/admin/home">Home</a>
+<a class="nav-link" href="/admin/add">Add</a>
+<a class="nav-link" href="/admin/edit">Edit</a>
+<a class="nav-link" href="/admin/delete">Delete</a>
 {% endblock nav_items %}
 
 {% block content %}
@@ -16,7 +16,7 @@
   <ul class="list-group" style="max-height: 50lvh; overflow:scroll; -webkit-overflow-scrolling: touch; word-wrap: break-word;">
     {% for id, url, new_tab in redirects %}
     <li class="list-group-item">
-      <button class="btn btn-clipboard btn-icon btn-sm btn-light" style="float:right" type="button" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Copy to Clipboard" data-clipboard-text="{{ request.host }}/r/{{ id }}"><i class="bi bi-clipboard"></i></button>
+      <button class="btn btn-clipboard btn-icon btn-sm btn-light" style="float:right" type="button" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Copy to Clipboard" data-clipboard-text="{{ request.host }}/{{ id }}"><i class="bi bi-clipboard"></i></button>
       <p class="m-0" style="font-size: 15px; font-family: 'Courier New', Courier, monospace;"><b>{{ id }}</b></p>
       {% if new_tab %}
       <p class="m-0" style="font-size: 10px; color: rgb(100, 209, 213);">opens in new tab</p>
@@ -34,6 +34,6 @@
 <div class="mb-3 p-3 text-black rounded shadow">
   <h4 class="mb-2 pb-2 border-bottom">Usage</h4>
   <p class="mb-2">You can either add, edit or delete a redirect by navigating to the respective page via the menu. Each new redirect gets a randomly generated and unique id. To perform a redirect use the url according to the following scheme (without the brackets):</p>
-  <p class="mb-1 mx-3">{{ request.host }}/r/<span style="color:rgb(160, 160, 160);">&lt;id&gt;</span></p>
+  <p class="mb-1 mx-3">{{ request.host }}/<span style="color:rgb(160, 160, 160);">&lt;id&gt;</span></p>
 </div>
 {% endblock content %}

@@ -1,10 +1,10 @@
 {% extends "base_admin.html" %}
 
 {% block nav_items %}
-<a class="nav-link" href="/">Home</a>
-<a class="nav-link" href="/add">Add</a>
-<a class="nav-link active" aria-current="page" href="/edit">Edit</a>
-<a class="nav-link" href="/delete">Delete</a>
+<a class="nav-link" href="/admin/home">Home</a>
+<a class="nav-link" href="/admin/add">Add</a>
+<a class="nav-link active" aria-current="page" href="/admin/edit">Edit</a>
+<a class="nav-link" href="/admin/delete">Delete</a>
 {% endblock nav_items %}
 
 {% block content %}
@@ -46,17 +46,17 @@
   editForm.onsubmit = async (e) => {
     e.preventDefault();
     data = {'action': "edit", 'old_id': redirectSelect.options[redirectSelect.selectedIndex].getAttribute('data-id'), 'new_id': idInput.value, 'url': urlInput.value, 'new_tab': Number(newTabCheck.checked)}
-    const response = await fetch("/config", {
+    const response = await fetch("/admin/config", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify(data)
     });
     data = await response.json()
     if (data['result'] === "success") {
-      window.location.replace(`/edit?suc=${data['message']}`);
+      window.location.replace(`/admin/edit?suc=${data['message']}`);
       removeSessionStorageItems();
     }
-    if (data['result'] === "error") window.location.replace(`/edit?err=${data['message']}`);
+    if (data['result'] === "error") window.location.replace(`/admin/edit?err=${data['message']}`);
   };
   window.onload = () => {
     if ((val = sessionStorage.getItem("prevPage")) != null && val !== "edit") removeSessionStorageItems(); 

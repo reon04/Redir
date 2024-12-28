@@ -1,10 +1,10 @@
 {% extends "base_admin.html" %}
 
 {% block nav_items %}
-<a class="nav-link" href="/">Home</a>
-<a class="nav-link" href="/add">Add</a>
-<a class="nav-link" href="/edit">Edit</a>
-<a class="nav-link active" aria-current="page" href="/delete">Delete</a>
+<a class="nav-link" href="/admin/home">Home</a>
+<a class="nav-link" href="/admin/add">Add</a>
+<a class="nav-link" href="/admin/edit">Edit</a>
+<a class="nav-link active" aria-current="page" href="/admin/delete">Delete</a>
 {% endblock nav_items %}
 
 {% block content %}
@@ -44,17 +44,17 @@
   editForm.onsubmit = async (e) => {
     e.preventDefault();
     data = {'action': "delete", 'id': redirectSelect.options[redirectSelect.selectedIndex].value}
-    const response = await fetch("/config", {
+    const response = await fetch("/admin/config", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify(data)
     });
     data = await response.json()
     if (data['result'] === "success") {
-      window.location.replace(`/delete?suc=${data['message']}`);
+      window.location.replace(`/admin/delete?suc=${data['message']}`);
       removeSessionStorageItems();
     }
-    if (data['result'] === "error") window.location.replace(`/delete?err=${data['message']}`);
+    if (data['result'] === "error") window.location.replace(`/admin/delete?err=${data['message']}`);
   };
   window.onload = () => {
     if ((val = sessionStorage.getItem("prevPage")) != null && val !== "delete") removeSessionStorageItems(); 

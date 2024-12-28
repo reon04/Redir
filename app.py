@@ -1,6 +1,6 @@
 import os
 import re
-from flask import Flask, request, abort, send_from_directory, render_template
+from flask import Flask, request, abort, render_template, current_app
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 import mariadb
@@ -112,7 +112,7 @@ def verify_password(username, password):
   if username in http_users and check_password_hash(http_users.get(username), password):
     return username
 
-@app.route('/config', methods=['POST'])
+@app.route('/admin/config', methods=['POST'])
 @auth.login_required
 def config():
   try:
@@ -153,7 +153,7 @@ def config():
   except:
     return resp_err(f"Internal server error.")
 
-@app.route('/r/<path:id>', methods=['GET'])
+@app.route('/<path:id>', methods=['GET'])
 def redir(id):
   res = db_exec(f"SELECT id, url, new_tab FROM {TABLE_NAME} WHERE id = ?", (id,))
   if len(res) == 0: abort(404)
@@ -166,36 +166,42 @@ def redir(id):
 @auth.login_required
 @db_check
 def index():
+  return render_template('redir_same_tab.html', url="/admin/home")
+
+@app.route('/admin/home', endpoint='home')
+@auth.login_required
+@db_check
+def home():
   redirects = get_redirects()
   return render_template('home.html', redirects=redirects)
 
-@app.route('/add', endpoint='add')
+@app.route('/admin/add', endpoint='add')
 @auth.login_required
 @db_check
 def add():
   return render_template('add.html', max_url_len=MAX_URL_LENGTH, max_id_len=MAX_ID_LENGTH)
 
-@app.route('/edit', endpoint='edit')
+@app.route('/admin/edit', endpoint='edit')
 @auth.login_required
 @db_check
 def edit():
   redirects = get_redirects()
   return render_template('edit.html', redirects=redirects, max_url_len=MAX_URL_LENGTH, max_id_len=MAX_ID_LENGTH)
 
-@app.route('/delete', endpoint='delete')
+@app.route('/admin/delete', endpoint='delete')
 @auth.login_required
 @db_check
 def delete():
   redirects = get_redirects()
   return render_template('delete.html', redirects=redirects)
 
+@app.route('/admin/logo.png')
+def logo():
+  return current_app.send_static_file('logo.png')
+
 @app.route('/favicon.ico')
 def favicon():
-  return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
-@app.route('/logo.png')
-def logo():
-  return send_from_directory(os.path.join(app.root_path, 'static'), 'logo.png', mimetype='image/png')
+  return current_app.send_static_file('favicon.ico')
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port="81")
