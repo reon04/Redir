@@ -1,0 +1,4 @@
+Flask
+Flask-HTTPAuth
+gunicorn
+mariadb
