@@ -24,7 +24,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.5.1
         with:
-          images: reon04/redir
+          images: ${{ github.repository }}
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
